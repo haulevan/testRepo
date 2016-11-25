@@ -1,0 +1,23 @@
+function euler = quatern2euler(q)
+    R(1,1,:) = 2.*q(:,1).^2-1+2.*q(:,2).^2;
+    R(2,1,:) = 2.*(q(:,2).*q(:,3)-q(:,1).*q(:,4));
+    R(3,1,:) = 2.*(q(:,2).*q(:,4)+q(:,1).*q(:,3));
+    R(3,2,:) = 2.*(q(:,3).*q(:,4)-q(:,1).*q(:,2));
+    R(3,3,:) = 2.*q(:,1).^2-1+2.*q(:,4).^2;
+    disp(R(3,3,:))
+    phi = atan2(R(3,2,:), R(3,3,:) );
+    theta = -atan(R(3,1,:) ./ sqrt(1-R(3,1,:).^2) );
+    psi = atan2(R(2,1,:), R(1,1,:) );
+
+    euler = [phi(1,:)' theta(1,:)' psi(1,:)'];
+end
+
+vector = (3:1:10);vector(1,1,:)
+matrix = [vector ; vector * 5; vector * 10; vector * 20; vector * 15; vector * 25]
+matrix(:, 2:5)
+    quatern2euler(matrix(:, 2:5))
+    vector(1,1,:)
+
+
+    https://www.jdoodle.com/execute-octave-matlab-online
+    https://www.gnu.org/software/octave/doc/v4.0.3/Index-Expressions.html#Index-Expressions
