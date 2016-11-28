@@ -20,6 +20,7 @@ matrix(:, 2:5)
 
 
     https://www.jdoodle.com/execute-octave-matlab-online
+    https://www.mathworks.com/help/matlab/functionlist.html
     https://www.gnu.org/software/octave/doc/v4.0.3/Index-Expressions.html#Index-Expressions
     
 [pks1 idx1] = findpeaks(gz1,"DoubleSided","MinPeakHeight",0.1,"MinPeakDistance",3,"MinPeakWidth",1);
