@@ -38,3 +38,21 @@ matrix(:, 2:5)
   addressanglesdiffy1 = addressanglesy1-addressangley1;
   addressanglesy1 = addressanglesy1(find(abs(addressanglesdiffy1)<20));
   addressangley1 = mean(addressanglesy1);
+  
+  impactangles1 = euy1(impgyx1-4:impgyx1+4,:);
+  diffr1L=impactangles1-addressangley1L;
+  [a1 b1l]=sort(abs(diffr1L));
+  ifagyx1L=impactangles1(b1l(1))-addressangley1L;
+
+
+  impactangles1 = euy1(impgyx1-4:impgyx1+4,:);
+  diffr1L=impactangles1-addressangley1;
+  [a1 b1]=sort(abs(diffr1L));
+  ifagyx1=impactangles1(b1(1))-addressangley1;
+  
+  gtot = (gyrox1 .^ 2 + gyroy1 .^ 2 + gyroz1 .^ 2) .^ 0.5;
+  gtot_max = max(gtot);
+  
+  clubSwingRadius = 0.85; % in meters
+  clubheadSpeed = clubSwingRadius * gtot_max * (2000.0/32768.0) * 3.1415926 /180.0;% m/s
+  clubheadSpeed = clubheadSpeed * 3600.0 /1609.34; % in mph
