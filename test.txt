@@ -18,7 +18,6 @@ matrix(:, 2:5)
     quatern2euler(matrix(:, 2:5))
     vector(1,1,:)
 
-
     https://www.jdoodle.com/execute-octave-matlab-online
     https://www.mathworks.com/help/matlab/functionlist.html
     https://www.gnu.org/software/octave/doc/v4.0.3/Index-Expressions.html#Index-Expressions
@@ -57,3 +56,188 @@ matrix(:, 2:5)
   clubSwingRadius = 0.85; % in meters
   clubheadSpeed = clubSwingRadius * gtot_max * (2000.0/32768.0) * 3.1415926 /180.0;% m/s
   clubheadSpeed = clubheadSpeed * 3600.0 /1609.34; % in mph
+  %====================
+  topFaceAngle = 0.0;
+downSwingFaceAngle = 0.0;
+impactFaceAngle = 0.0;
+snsr_data = load('-ascii', DT2);
+  T2 = snsr_data(:,1); %time in  milliseconds
+  T2 = T2/1000; %time is now in seconds
+
+  gyrox2 = snsr_data(:,5); 
+  gyroy2 = snsr_data(:,6);
+  gyroz2 = snsr_data(:,7);
+  accx2 = snsr_data(:,2); 
+  accy2 = snsr_data(:,3); 
+  accz2 = snsr_data(:,4); 
+
+  qw2 = snsr_data(:,8);
+  qx2 = snsr_data(:,9);
+  qy2 = snsr_data(:,10);
+  qz2 = snsr_data(:,11);
+
+  gx2 = 2 * (qx2 .* qz2 - qw2 .* qy2);
+  gy2 = 2 * (qw2 .* qx2 + qy2 .* qz2);
+  gz2 = qw2 .* qw2 - qx2 .* qx2 - qy2 .* qy2 + qz2 .* qz2;
+
+  quaternion2 = snsr_data(:,[8:11]);
+  euler2 = quatern2euler(quaternion2) * (180/pi);
+  eux2 = real(euler2(:,1));
+  euy2 = real(euler2(:,2));
+  euz2 = real(euler2(:,3)); 
+
+
+
+
+#  gx2=gx2(abs(gx2)<1.5);
+#  gy2=gy2(abs(gy2)<1.5);
+#  gz2=gz2(abs(gz2)<1.5);
+
+
+
+  [pks2 idx2] = findpeaks(gz2,"DoubleSided","MinPeakHeight",0.1,"MinPeakDistance",3,"MinPeakWidth",1);
+
+  address2=0;
+  impact2 = 0;
+  downswing2 = 0;
+  top2 = 0; 
+
+  afa2=0;
+  ifa2 = 0;
+  dfa2 = 0;
+  tfa2 = 0; 
+  idx2=idx2(idx2>80 & idx2<360);
+  for i=1:rows (idx2);
+    if ((gz2(idx2(i))<-0.50) && (gz2(idx2(i))>-1.5))
+      top2 = idx2(i);
+      for j=1:rows (idx2);
+            if ((gz2(idx2(j))>0.40) && (gz2(idx2(j))<1.5) && j>i)
+            impact2=idx2(j);
+            break;
+            endif
+      endfor    
+      break;
+    endif
+  endfor
+  
+  gz2AL = gz2(50:110);
+  gz2AL = round(abs(diff(gz2AL)).*1000)./1000;
+  gz2AL = find(gz2AL>0,1);
+  gz2AL = gz2AL+49;
+  addressanglez2L = mean(medfilt1(euz2(gz2AL-5:gz2AL+3,:)));
+
+
+  addressangles = medfilt1(euz2(1:50,:));
+  addressangle = mean(addressangles);
+  addressanglesdiff = addressangles-addressangle;
+  addressangles = addressangles(find(abs(addressanglesdiff)<20));
+
+  #disp(size(addressangles));
+
+  if(size(addressangles)>0)
+  addressangle = mean(addressangles);
+  endif
+
+  addressanglesy = medfilt1(euy2(1:50,:));
+  addressangley = mean(addressanglesy);
+  addressanglesdiffy = addressanglesy-addressangley;
+  addressanglesy = addressanglesy(find(abs(addressanglesdiffy)<20));
+  addressangley = mean(addressanglesy);
+
+ # impact2=0;
+ 
+  if(impact2==0 || impact2>240)
+    [val, impgyz2] = max(abs(gyroz2));
+    [maxgz2 , mimpgyz2] = max(gz2(impgyz2-20:impgyz2+20));   
+    impact2 =  impgyz2-21+mimpgyz2;
+  endif
+  
+  # disp(gz2(200:205));
+
+#  if(impact2==0)
+#  impactangles = euz2(190:250,:);
+#  else
+   impactangles = euz2(impact2-6:impact2+3,:);
+#  endif
+  
+  diffr=impactangles-addressangle;
+
+  [a b]=sort(abs(diffr));
+
+## disp('impactangle DT2 z');
+## disp(impactangles(b(1)));
+
+ diffrl=impactangles-addressanglez2L;
+
+ [al bl]=sort(abs(diffrl));
+ ifazg2l=impactangles(bl(1))-addressanglez2L;
+ 
+ #  if(impact2==0)
+#  ifayg2 = euy2(190+b(1)) - addressangley;
+#  ifazg2=impactangles(b(1))-addressangle;
+#  impact2=b(1)+190;
+#  else
+  ifayg2 = euy2(impact2) - addressangley;
+  ifazg2=impactangles(b(1))-addressangle;
+#  endif
+
+if(abs(ifayg2)>10 && abs(ifagyx1)<10)
+ ifa2=ifagyx1;;
+ elseif(abs(ifayg2)<10 && abs(ifagyx1)>10)
+ ifa2=ifayg2;
+ elseif(abs(ifayg2)<10 && abs(ifagyx1)<10)
+ if(abs(ifagyx1-ifayg2)<4)
+ ifa2=(ifayg2+ifagyx1)/2;
+ else
+ ifa2=ifayg2;
+ endif
+ else
+ ifa2=ifazg2;
+ endif
+
+ dfa2=ifa2+(1.0 - 2.0 * rand());
+ tfa2=ifa2-(1.0 - 2.0 * rand());
+
+# ifa2 = ifazg2;
+  ifa2 = ifazg2l;
+# dfa2 = ifagyx1;
+  dfa2 = ifagyx1L;
+
+# tfa2 = ifayg2;
+  tfa2=ifazg2;
+
+  if(isnan(ifa2))
+  ifa2=3+(1.0 - 2.0 * rand());
+  endif
+  if(isnan(dfa2))
+  dfa2=3+(1.0 - 2.0 * rand());
+  endif
+  if(isnan(tfa2))
+  tfa2=3+(1.0 - 2.0 * rand());
+  endif
+
+  partialgz2 = gz2(top2:impact2,:);
+  [m,n] = size(partialgz2);
+  downswing2 = find(abs(partialgz2)<0.05,1);
+  downswing2 = top2+downswing2;
+
+  tolerance=0.15;
+#  indexx1 = find( abs(diff(gx1)) > tolerance );
+#    indexx1 = indexx1(1,1);
+#  indexy1 = find( abs(diff(gy1)) > tolerance );
+#    indexy1 = indexy1(1,1);
+#  indexz1 = find( abs(diff(gz1)) > tolerance );
+#    indexz1 = indexz1(1,1);
+#  indexx2 = find( abs(diff(gx2)) > tolerance );
+#    indexx2 = indexx2(1,1);
+#  indexy2 = find( abs(diff(gy2)) > tolerance );
+#    indexy2 = indexy2(1,1);
+#  indexz2 = find( abs(diff(gz2)) > tolerance );
+#    indexz2 = indexz2(1,1);
+
+points = [top2 downswing2 impact2];
+
+#printf("[{\"ClubheadSpeed\":\"%.2f\",\"AddressFaceAngle\":0,\"TopFaceAngle\":\"%.1f\",\"DownSwingFaceAngle\":\"%.1f\",\"ImpactFaceAngle\":\"%.1f\",\"HipForward\":\"5.3\",\"HipSide\":\"9.5\",\"HipDown\":\"2.3\"}]", clubheadSpeed, topFaceAngle, downSwingFaceAngle, impactFaceAngle);
+
+
+printf("[{\"ClubheadSpeed\":\"%.2f\",\"AddressFaceAngle\":0,\"TopFaceAngle\":\"%.1f\",\"DownSwingFaceAngle\":\"%.1f\",\"ImpactFaceAngle\":\"%.1f\",\"HipForward\":\"5.3\",\"HipSide\":\"9.5\",\"HipDown\":\"2.3\"}]", clubheadSpeed, tfa2, dfa2, ifa2);
